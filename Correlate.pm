@@ -9,7 +9,7 @@ Astro::Correlate - Class for cross-correlating astronomical catalogues.
   use Astro::Correlate;
 
   my $corr = new Astro::Correlate( catalog1 => $cat1,
-                                 catalog2 => $cat2 );
+                                   catalog2 => $cat2 );
 
   $result = $corr->correlate( method => $method );
 
@@ -138,6 +138,11 @@ This method takes one mandatory named argument, a string describing
 which method is to be used for cross-correlation. Currently-available
 cross-correlation methods are FINDOFF. This string is case-insensitive.
 
+This method takes the following optional named arguments:
+
+=item verbose - If this argument is set to true (1), then the correlation
+method will print out progress statements. Defaults to false.
+
 This method returns two catalogues, both containing stars that matched
 in the two catalogues passed to the constructor. The returned catalogues
 are C<Astro::Catalog> objects, and each matched C<Astro::Catalog::Star>
@@ -154,6 +159,8 @@ sub correlate {
     croak "Must supply cross-correlation method";
   }
 
+  my $verbose = $args{'verbose'} || 0;
+
   # Find out what the cross-correlation class is called.
   my $corrclass = _load_corr_plugin( $args{'method'} );
   if( ! defined( $corrclass ) ) {
@@ -168,7 +175,8 @@ sub correlate {
   my $cat1 = $self->cat1;
   my $cat2 = $self->cat2;
   ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $cat1,
-                                                    catalog2 => $cat2 );
+                                                    catalog2 => $cat2,
+                                                    verbose => $verbose );
 
   # Return the correlated catalogues;
   return( $corrcat1, $corrcat2 );

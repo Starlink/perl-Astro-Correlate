@@ -6,7 +6,7 @@ Astro::Correlate::Method::FINDOFF - Correlation using Starlink FINDOFF.
 
 =head1 SYNOPSIS
 
-  ( $corrcat1, $corrcat2 ) = Astro::Correlate::Method::FINDOFF->correlate( $cat1, $cat2 );
+  ( $corrcat1, $corrcat2 ) = Astro::Correlate::Method::FINDOFF->correlate( catalog1 => $cat1, catalog2 => $cat2 );
 
 =head1 DESCRIPTION
 
@@ -23,7 +23,10 @@ use Carp;
 use File::Temp qw/ tempfile /;
 
 our $VERSION = '0.01';
-our $DEBUG = 1;
+our $DEBUG = 0;
+
+# Cache the task.
+our $TASK;
 
 =head1 METHODS
 
@@ -35,7 +38,8 @@ our $DEBUG = 1;
 
 Cross-correlates two catalogues.
 
-  ( $corrcat1, $corrcat2 ) = Astro::Correlate::Method::FINDOFF->correlate( $cat1, $cat2 );
+  ( $corrcat1, $corrcat2 ) = Astro::Correlate::Method::FINDOFF->correlate( catalog1 => $cat1,
+                                                                           catalog2 => $cat2 );
 
 This method takes two mandatory arguments, both C<Astro::Catalog> objects.
 It returns two C<Astro::Catalog> objects containing C<Astro::Catalog::Star>
@@ -47,19 +51,37 @@ the same IDs as in the input catalogues. A matched object has the same ID
 in the two returned catalogues, allowing for further comparisons between
 matched objects.
 
+This method takes the following optional named arguments:
+
+=item verbose - If this argument is set to true (1), then this method will
+print progress statements. Defaults to false.
+
 =cut
 
 sub correlate {
   my $class = shift;
 
+# Grab the arguments, and make sure they're defined and are
+# Astro::Catalog objects (the catalogues, at least).
   my %args = @_;
   my $cat1 = $args{'catalog1'};
   my $cat2 = $args{'catalog2'};
 
-  # Try to find the CCDPACK binary. First, check to see if
-  # the CCDPACK_DIR environment variable has been set. If it
-  # hasn't, check in /star/bin/ccdpack. If that is nonexistant,
-  # croak with an error.
+  if( ! defined( $cat1 ) ||
+      ! UNIVERSAL::isa( $cat1, "Astro::Catalog" ) ) {
+    croak "catalog1 parameter to correlate method must be defined and must be an Astro::Catalog object";
+  }
+  if( ! defined( $cat2 ) ||
+      ! UNIVERSAL::isa( $cat2, "Astro::Catalog" ) ) {
+    croak "catalog2 parameter to correlate method must be defined and must be an Astro::Catalog object";
+  }
+
+  my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
+
+# Try to find the CCDPACK binary. First, check to see if
+# the CCDPACK_DIR environment variable has been set. If it
+# hasn't, check in /star/bin/ccdpack. If that is nonexistant,
+# croak with an error.
   my $ccdpack_bin;
   if( defined( $ENV{'CCDPACK_DIR'} ) &&
       -d $ENV{'CCDPACK_DIR'} &&
@@ -73,84 +95,88 @@ sub correlate {
   }
   print "CCDPACK_REG binary is in $ccdpack_bin\n" if $DEBUG;
 
-  # Get two temporary file names for catalog files.
+# Get two temporary file names for catalog files.
   ( undef, my $catfile1 ) = tempfile();
   ( undef, my $catfile2 ) = tempfile();
 
-  # We need to write two input files for FINDOFF, one for each catalogue.
-  # Do so using Astro::Catalog.
+# We need to write two input files for FINDOFF, one for each catalogue.
+# Do so using Astro::Catalog.
   $cat1->write_catalog( Format => 'FINDOFF', File => $catfile1 );
   $cat2->write_catalog( Format => 'FINDOFF', File => $catfile2 );
 
-  # We need to write an input file for FINDOFF that lists the above two
-  # input files.
+# We need to write an input file for FINDOFF that lists the above two
+# input files.
   ( my $findoff_fh, my $findoff_input ) = tempfile();
   print $findoff_fh "$catfile1\n$catfile2\n";
   close $findoff_fh;
 
-  # Set up the parameter list for FINDOFF.
-  my $param = "ndfnames=false error=1 maxdisp=! minsep=5 fast=yes failsafe=yes";
+# Set up the parameter list for FINDOFF.
+  my $param = "ndfnames=false error=5 maxdisp=! minsep=5 fast=yes failsafe=yes";
   $param .= " logto=terminal namelist=! complete=0.15";
   $param .= " inlist=^$findoff_input outlist='*.off'";
 
-  # Do the extraction.
+# Do the extraction.
   my $ams = new Starlink::AMS::Init(1);
-  $ams->messages($DEBUG);
-  my $ccdpack = new Starlink::AMS::Task( "ccdpack_reg", "$ccdpack_bin" );
-  my $STATUS = $ccdpack->contactw;
-  $ccdpack->obeyw("findoff", "$param");
+  $ams->messages($DEBUG || $verbose);
+  if( ! defined( $TASK ) ) {
+    $TASK = new Starlink::AMS::Task( "ccdpack_reg", "$ccdpack_bin" );
+  }
+  my $STATUS = $TASK->contactw;
+  $TASK->obeyw("findoff", "$param");
+  $ams->messages(0);
 
-  # Read in the first output catalog.
+# Read in the first output catalog.
   my $outfile1 = $catfile1 . ".off";
   my $tempcat = new Astro::Catalog( Format => 'FINDOFF',
                                     File => $outfile1 );
-  # Loop through the stars, making a new catalogue with new stars using
-  # a combination of the new ID and the old information.
+# Loop through the stars, making a new catalogue with new stars using
+# a combination of the new ID and the old information.
   my $corrcat1 = new Astro::Catalog();
   my @stars = $tempcat->stars;
   foreach my $star ( @stars ) {
 
-    # The old ID is found in the first column of the star's comment.
+# The old ID is found in the first column of the star's comment.
     $star->comment =~ /^(\w+)/;
     my $oldid = $1;
 
-    # Get the star's information.
+# Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
 
-    # Set the ID to the new star's ID.
+# Set the ID to the new star's ID.
     $oldstar->id( $star->id );
 
-    # And push this star onto the output catalogue.
+# And push this star onto the output catalogue.
     $corrcat1->pushstar( $oldstar );
   }
 
-  # Do the same for the second catalogue.
+# Do the same for the second catalogue.
   my $outfile2 = $catfile2 . ".off";
   $tempcat = new Astro::Catalog( Format => 'FINDOFF',
                                  File => $outfile2 );
-  # Loop through the stars, making a new catalogue with new stars using
-  # a combination of the new ID and the old information.
+
+# Loop through the stars, making a new catalogue with new stars using
+# a combination of the new ID and the old information.
   my $corrcat2 = new Astro::Catalog();
   @stars = $tempcat->stars;
   foreach my $star ( @stars ) {
 
-    # The old ID is found in the first column of the star's comment.
+# The old ID is found in the first column of the star's comment.
     $star->comment =~ /^(\w+)/;
     my $oldid = $1;
 
-    # Get the star's information.
+# Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
 
-    # Set the ID to the new star's ID.
+# Set the ID to the new star's ID.
     $oldstar->id( $star->id );
 
-    # And push this star onto the output catalogue.
+# And push this star onto the output catalogue.
     $corrcat2->pushstar( $oldstar );
   }
 
-  # Delete the temporary catalogues.
+# Delete the temporary catalogues.
   unlink $catfile1 unless $DEBUG;
   unlink $catfile2 unless $DEBUG;
   unlink $outfile1 unless $DEBUG;
@@ -159,5 +185,25 @@ sub correlate {
   return ( $corrcat1, $corrcat2 );
 
 }
+
+=back
+
+=head1 REVISION
+
+$Id$
+
+=head1 AUTHORS
+
+Brad Cavanagh E<lt>b.cavanagh@jach.hawaii.eduE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2005 Particle Physics and Astronomy Research Council.
+All Rights Reserved.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=cut
 
 1;
