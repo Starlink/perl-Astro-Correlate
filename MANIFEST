@@ -2,3 +2,4 @@ Correlate.pm
 Makefile.PL
 MANIFEST
 Method/FINDOFF.pm
+t/01_compile.t
