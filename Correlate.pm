@@ -74,6 +74,56 @@ sub new {
 
 =back
 
+=head2 Accessor Methods
+
+=over 4
+
+=item B<cat1>
+
+Return or set the first catalogue used for correlation.
+
+  my $catalog = $corr->cat1;
+
+  $corr->cat1( $catalog );
+
+Returns an C<Astro::Catalog> object.
+
+=cut
+
+sub cat1 {
+  my $self = shift;
+  if( @_ ) {
+    my $cat = shift;
+    if( UNIVERSAL::isa( $cat, "Astro::Catalog" ) ) {
+      $self->{CATALOG1} = $cat;
+    }
+  }
+  return $self->{CATALOG1};
+}
+
+=item B<cat2>
+
+Return or set the second catalogue used for correlation.
+
+  my $catalog = $corr->cat2;
+
+  $corr->cat2( $catalog );
+
+Returns an C<Astro::Catalog> object.
+
+=cut
+
+sub cat2 {
+  my $self = shift;
+  if( @_ ) {
+    my $cat = shift;
+    if( UNIVERSAL::isa( $cat, "Astro::Catalog" ) ) {
+      $self->{CATALOG2} = $cat;
+    }
+  }
+  return $self->{CATALOG2};
+}
+
 =head2 General Methods
 
 =over 4
@@ -115,7 +165,10 @@ sub correlate {
   my $corrcat2;
 
   # And do the correlation.
-  ( $corrcat1, $corrcat2 ) = $corrclass->correlate;
+  my $cat1 = $self->cat1;
+  my $cat2 = $self->cat2;
+  ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $cat1,
+                                                    catalog2 => $cat2 );
 
   # Return the correlated catalogues;
   return( $corrcat1, $corrcat2 );
