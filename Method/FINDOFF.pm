@@ -104,6 +104,23 @@ sub correlate {
   $cat1->write_catalog( Format => 'FINDOFF', File => $catfile1 );
   $cat2->write_catalog( Format => 'FINDOFF', File => $catfile2 );
 
+# Create two hash lookup tables. Key will be the "FINDOFF-ed" ID,
+# which is the original ID with all non-numeric characters removed,
+# and value will be the original ID. This will allow us to match up
+# stars after the correlation has happened.
+  my %lookup_cat1;
+  my %lookup_cat2;
+  foreach my $star ( $cat1->stars ) {
+    ( my $newid = $star->id ) =~ s/[^\d]//g;
+    $lookup_cat1{$newid} = $star->id;
+    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+  }
+  foreach my $star ( $cat2->stars ) {
+    ( my $newid = $star->id ) =~ s/[^\d]//g;
+    $lookup_cat2{$newid} = $star->id;
+    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+  }
+
 # We need to write an input file for FINDOFF that lists the above two
 # input files.
   ( my $findoff_fh, my $findoff_input ) = tempfile();
@@ -136,8 +153,12 @@ sub correlate {
   foreach my $star ( @stars ) {
 
 # The old ID is found in the first column of the star's comment.
+# However, this old ID has been "FINDOFF-ed", i.e. all non-numeric
+# characters have been stripped from it. Use the lookup table we
+# generated earlier to find the proper old ID.
     $star->comment =~ /^(\w+)/;
-    my $oldid = $1;
+    my $oldfindoffid = $1;
+    my $oldid = $lookup_cat1{$oldfindoffid};
 
 # Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
@@ -162,8 +183,12 @@ sub correlate {
   foreach my $star ( @stars ) {
 
 # The old ID is found in the first column of the star's comment.
+# However, this old ID has been "FINDOFF-ed", i.e. all non-numeric
+# characters have been stripped from it. Use the lookup table we
+# generated earlier to find the proper old ID.
     $star->comment =~ /^(\w+)/;
-    my $oldid = $1;
+    my $oldfindoffid = $1;
+    my $oldid = $lookup_cat2{$oldfindoffid};
 
 # Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
