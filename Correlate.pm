@@ -9,9 +9,10 @@ Astro::Correlate - Class for cross-correlating astronomical catalogues.
   use Astro::Correlate;
 
   my $corr = new Astro::Correlate( catalog1 => $cat1,
-                                   catalog2 => $cat2 );
+                                   catalog2 => $cat2,
+                                   method => 'FINDOFF' );
 
-  $result = $corr->correlate( method => $method );
+  $result = $corr->correlate;
 
 =head1 DESCRIPTION
 
@@ -60,15 +61,15 @@ sub new {
       ! UNIVERSAL::isa( $args{'catalog2'}, "Astro::Catalog" ) ) {
     croak "Must supply two Astro::Catalog objects to Astro::Correlate constructor.\n";
   }
-  my $cat1 = $args{'catalog1'};
-  my $cat2 = $args{'catalog2'};
 
+  # Create the object.
   my $corr = {};
-
-  $corr->{CATALOG1} = $cat1;
-  $corr->{CATALOG2} = $cat2;
-
   bless( $corr, $class );
+
+  # Configure the object.
+  $corr->_configure( \%args );
+
+  # And return the object.
   return $corr;
 }
 
@@ -78,19 +79,18 @@ sub new {
 
 =over 4
 
-=item B<cat1>
+=item B<catalog1>
 
 Return or set the first catalogue used for correlation.
 
-  my $catalog = $corr->cat1;
-
-  $corr->cat1( $catalog );
+  my $catalog = $corr->catalog1;
+  $corr->catalog1( $catalog );
 
 Returns an C<Astro::Catalog> object.
 
 =cut
 
-sub cat1 {
+sub catalog1 {
   my $self = shift;
   if( @_ ) {
     my $cat = shift;
@@ -101,19 +101,18 @@ sub cat1 {
   return $self->{CATALOG1};
 }
 
-=item B<cat2>
+=item B<catalog2>
 
 Return or set the second catalogue used for correlation.
 
-  my $catalog = $corr->cat2;
-
-  $corr->cat2( $catalog );
+  my $catalog = $corr->catalog2;
+  $corr->catalog2( $catalog );
 
 Returns an C<Astro::Catalog> object.
 
 =cut
 
-sub cat2 {
+sub catalog2 {
   my $self = shift;
   if( @_ ) {
     my $cat = shift;
@@ -124,6 +123,97 @@ sub cat2 {
   return $self->{CATALOG2};
 }
 
+=item B<keeptemps>
+
+Whether or not to keep temporary files after processing is completed.
+
+  my $keeptemps = $corr->keeptemps;
+  $corr->keeptemps( 1 );
+
+Temporary files are created in a temporary directory that is reported
+during execution. The location of this temporary directory can be
+controlled using the C<tempdir> method.
+
+This parameter defaults to false, so all temporary files are deleted
+after processing.
+
+=cut
+
+sub keeptemps {
+  my $self = shift;
+  if( @_ ) {
+    my $keeptemps = shift;
+    $self->{KEEPTEMPS} = $keeptemps;
+  }
+  return $self->{KEEPTEMPS};
+}
+
+=item B<method>
+
+Retrieve or set the method to be used for correlation.
+
+  my $method = $corr->method;
+  $corr->method( 'FINDOFF' );
+
+The method is case-sensitive.
+
+=cut
+
+sub method {
+  my $self = shift;
+  if( @_ ) {
+    my $method = shift;
+    $self->{METHOD} = $method;
+  }
+  return $self->{METHOD};
+}
+
+=item B<temp>
+
+Retrieve or set the directory to be used for temporary files.
+
+  my $temp = $corr->temp;
+  $corr->temp( '/tmp' );
+
+If undef (which is the default), a temporary directory will be
+created using C<File::Temp>.
+
+=cut
+
+sub temp {
+  my $self = shift;
+  if( @_ ) {
+    my $temp = shift;
+    $self->{TEMP} = $temp;
+  }
+  if( ! defined( $self->{TEMP} ) ) {
+    $self->{TEMP} = tempdir();
+  }
+  return $self->{TEMP};
+}
+
+=item B<verbose>
+
+Retrieve or set the verbosity level.
+
+  my $verbose = $corr->verbose;
+  $corr->verbose( 1 );
+
+If set to true, then much output will be output to STD_ERR. Defaults to false.
+
+=cut
+
+sub verbose {
+  my $self = shift;
+  if( @_ ) {
+    my $verbose = shift;
+    $self->{VERBOSE} = $verbose;
+  }
+  return $self->{VERBOSE};
+}
+
+=back
+
 =head2 General Methods
 
 =over 4
@@ -132,16 +222,7 @@ sub cat2 {
 
 Cross-correlates two catalogues using the supplied method.
 
-  ( $corrcat1, $corrcat2 ) = $corr->correlate( method => $method );
-
-This method takes one mandatory named argument, a string describing
-which method is to be used for cross-correlation. Currently-available
-cross-correlation methods are FINDOFF. This string is case-insensitive.
-
-This method takes the following optional named arguments:
-
-=item verbose - If this argument is set to true (1), then the correlation
-method will print out progress statements. Defaults to false.
+  ( $corrcat1, $corrcat2 ) = $corr->correlate;
 
 This method returns two catalogues, both containing stars that matched
 in the two catalogues passed to the constructor. The returned catalogues
@@ -153,18 +234,14 @@ object has the same ID number in either catalogue.
 sub correlate {
   my $self = shift;
 
-  my %args = @_;
-
-  if( ! defined( $args{'method'} ) ) {
+  if( ! defined( $self->method ) ) {
     croak "Must supply cross-correlation method";
   }
 
-  my $verbose = $args{'verbose'} || 0;
-
   # Find out what the cross-correlation class is called.
-  my $corrclass = _load_corr_plugin( $args{'method'} );
+  my $corrclass = _load_corr_plugin( $self->method );
   if( ! defined( $corrclass ) ) {
-    croak "Could not load cross-correlation method class for " . $args{'method'} . " method";
+    croak "Could not load cross-correlation method class for " . $self->method . " method";
   }
 
   # Set up the correlated catalogues.
@@ -172,11 +249,11 @@ sub correlate {
   my $corrcat2;
 
   # And do the correlation.
-  my $cat1 = $self->cat1;
-  my $cat2 = $self->cat2;
-  ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $cat1,
-                                                    catalog2 => $cat2,
-                                                    verbose => $verbose );
+  ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $self->catalog1,
+                                                    catalog2 => $self->catalog2,
+                                                    keeptemps => $self->keeptemps,
+                                                    temp => $self->temp,
+                                                    verbose => $self->verbose );
 
   # Return the correlated catalogues;
   return( $corrcat1, $corrcat2 );
@@ -191,6 +268,28 @@ sub correlate {
 The following methods are private to the module.
 
 =over 4
+
+=item B<_configure>
+
+Configures the object.
+
+  $auto->_configure( $args );
+
+Takes one argument, a hash reference. The hash contains key/value pairs
+that correspond to the various accessor methods of this module.
+
+=cut
+
+sub _configure {
+  my $self = shift;
+  my $args = shift;
+
+  foreach my $key ( keys %$args ) {
+    if( $self->can( $key ) ) {
+      $self->$key( $args->{$key} );
+    }
+  }
+}
 
 =item B<_load_corr_plugin>
 
