@@ -76,6 +76,8 @@ sub correlate {
     croak "catalog2 parameter to correlate method must be defined and must be an Astro::Catalog object";
   }
 
+  my $keeptemps = defined( $args{'keeptemps'} ) ? $args{'keeptemps'} : 0;
+  my $temp = defined( $args{'temp'} ) ? $args{'temp'} : tempdir();
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
 
 # Try to find the CCDPACK binary. First, check to see if
@@ -96,8 +98,8 @@ sub correlate {
   print "CCDPACK_REG binary is in $ccdpack_bin\n" if $DEBUG;
 
 # Get two temporary file names for catalog files.
-  ( undef, my $catfile1 ) = tempfile();
-  ( undef, my $catfile2 ) = tempfile();
+  ( undef, my $catfile1 ) = tempfile( DIR => $temp );
+  ( undef, my $catfile2 ) = tempfile( DIR => $temp );
 
 # We need to write two input files for FINDOFF, one for each catalogue.
 # Do so using Astro::Catalog.
@@ -123,7 +125,7 @@ sub correlate {
 
 # We need to write an input file for FINDOFF that lists the above two
 # input files.
-  ( my $findoff_fh, my $findoff_input ) = tempfile();
+  ( my $findoff_fh, my $findoff_input ) = tempfile( DIR => $temp );
   print $findoff_fh "$catfile1\n$catfile2\n";
   close $findoff_fh;
 
@@ -202,10 +204,10 @@ sub correlate {
   }
 
 # Delete the temporary catalogues.
-  unlink $catfile1 unless $DEBUG;
-  unlink $catfile2 unless $DEBUG;
-  unlink $outfile1 unless $DEBUG;
-  unlink $outfile2 unless $DEBUG;
+  unlink $catfile1 unless ( $DEBUG || $keeptemps );
+  unlink $catfile2 unless ( $DEBUG || $keeptemps );
+  unlink $outfile1 unless ( $DEBUG || $keeptemps );
+  unlink $outfile2 unless ( $DEBUG || $keeptemps );
 
   return ( $corrcat1, $corrcat2 );
 
