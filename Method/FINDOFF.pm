@@ -22,6 +22,9 @@ use warnings::register;
 use Carp;
 use File::Temp qw/ tempfile /;
 
+use Starlink::AMS::Init;
+use Starlink::AMS::Task;
+
 our $VERSION = '0.01';
 our $DEBUG = 0;
 
