@@ -25,6 +25,7 @@ use strict;
 use warnings;
 use warnings::register;
 use Carp;
+use File::Temp qw/ tempdir /;
 
 our $VERSION = '0.01';
 
