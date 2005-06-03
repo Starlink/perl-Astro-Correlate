@@ -92,9 +92,9 @@ sub correlate {
       -d $ENV{'CCDPACK_DIR'} &&
       -e File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "ccdpack_reg" ) ) {
     $ccdpack_bin = File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "ccdpack_reg" );
-  } elsif( -d File::Spec->catfile( "star", "bin", "ccdpack" ) &&
-           -e File::Spec->catfile( "star", "bin", "ccdpack", "ccdpack_reg" ) ) {
-    $ccdpack_bin = File::Spec->catfile( "star", "bin", "ccdpack", "ccdpack_reg" );
+  } elsif( -d File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack" ) &&
+           -e File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "ccdpack_reg" ) ) {
+    $ccdpack_bin = File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "ccdpack_reg" );
   } else {
     croak "Could not find CCDPACK_REG binary.\n";
   }
@@ -168,6 +168,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    $cat1->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
@@ -198,6 +199,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    $cat2->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
