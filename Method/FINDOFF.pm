@@ -21,6 +21,7 @@ use warnings;
 use warnings::register;
 use Carp;
 use File::Temp qw/ tempfile /;
+use Storable qw/ dclone /;
 
 use Starlink::AMS::Init;
 use Starlink::AMS::Task;
@@ -67,8 +68,8 @@ sub correlate {
 # Grab the arguments, and make sure they're defined and are
 # Astro::Catalog objects (the catalogues, at least).
   my %args = @_;
-  my $cat1 = $args{'catalog1'};
-  my $cat2 = $args{'catalog2'};
+  my $cat1 = dclone($args{'catalog1'});
+  my $cat2 = dclone($args{'catalog2'});
 
   if( ! defined( $cat1 ) ||
       ! UNIVERSAL::isa( $cat1, "Astro::Catalog" ) ) {
@@ -168,10 +169,12 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
-    $cat1->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
+
+# Set the comment denoting the old ID.
+    $oldstar->comment( "Old ID: " . $oldid );
 
 # And push this star onto the output catalogue.
     $corrcat1->pushstar( $oldstar );
@@ -199,10 +202,12 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
-    $cat2->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
+
+# Set the comment denoting the old ID.
+    $oldstar->comment( "Old ID: " . $oldid );
 
 # And push this star onto the output catalogue.
     $corrcat2->pushstar( $oldstar );
