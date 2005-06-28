@@ -68,8 +68,8 @@ sub correlate {
 # Grab the arguments, and make sure they're defined and are
 # Astro::Catalog objects (the catalogues, at least).
   my %args = @_;
-  my $cat1 = dclone($args{'catalog1'});
-  my $cat2 = dclone($args{'catalog2'});
+  my $cat1 = $args{'catalog1'};
+  my $cat2 = $args{'catalog2'};
 
   if( ! defined( $cat1 ) ||
       ! UNIVERSAL::isa( $cat1, "Astro::Catalog" ) ) {
@@ -117,12 +117,14 @@ sub correlate {
   my %lookup_cat1;
   my %lookup_cat2;
   foreach my $star ( $cat1->stars ) {
-    ( my $newid = $star->id ) =~ s/[^\d]//g;
+    my $newid = $star->id;
+    $newid =~ s/[^\d]//g;
     $lookup_cat1{$newid} = $star->id;
     print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
   foreach my $star ( $cat2->stars ) {
-    ( my $newid = $star->id ) =~ s/[^\d]//g;
+    my $newid = $star->id;
+    $newid =~ s/[^\d]//g;
     $lookup_cat2{$newid} = $star->id;
     print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
