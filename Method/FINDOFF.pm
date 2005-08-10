@@ -23,8 +23,10 @@ use Carp;
 use File::Temp qw/ tempfile /;
 use Storable qw/ dclone /;
 
+use Starlink::ADAM;
 use Starlink::AMS::Init;
 use Starlink::AMS::Task;
+use Starlink::EMS qw/ :sai get_facility_error /;
 
 our $VERSION = '0.01';
 our $DEBUG = 0;
@@ -84,22 +86,22 @@ sub correlate {
   my $temp = defined( $args{'temp'} ) ? $args{'temp'} : tempdir();
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
 
-# Try to find the CCDPACK binary. First, check to see if
+# Try to find the FINDOFF binary. First, check to see if
 # the CCDPACK_DIR environment variable has been set. If it
 # hasn't, check in /star/bin/ccdpack. If that is nonexistant,
 # croak with an error.
-  my $ccdpack_bin;
+  my $findoff_bin;
   if( defined( $ENV{'CCDPACK_DIR'} ) &&
       -d $ENV{'CCDPACK_DIR'} &&
-      -e File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "ccdpack_reg" ) ) {
-    $ccdpack_bin = File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "ccdpack_reg" );
+      -e File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" ) ) {
+    $findoff_bin = File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" );
   } elsif( -d File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack" ) &&
-           -e File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "ccdpack_reg" ) ) {
-    $ccdpack_bin = File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "ccdpack_reg" );
+           -e File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "findoff" ) ) {
+    $findoff_bin = File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "findoff" );
   } else {
-    croak "Could not find CCDPACK_REG binary.\n";
+    croak "Could not find FINDOFF binary.\n";
   }
-  print "CCDPACK_REG binary is in $ccdpack_bin\n" if $DEBUG;
+  print "FINDOFF binary is in $findoff_bin\n" if $DEBUG;
 
 # Get two temporary file names for catalog files.
   ( undef, my $catfile1 ) = tempfile( DIR => $temp );
@@ -141,14 +143,22 @@ sub correlate {
   $param .= " inlist=^$findoff_input outlist='*.off'";
 
 # Do the extraction.
-  my $ams = new Starlink::AMS::Init(1);
-  $ams->messages($DEBUG || $verbose);
-  if( ! defined( $TASK ) ) {
-    $TASK = new Starlink::AMS::Task( "ccdpack_reg", "$ccdpack_bin" );
-  }
-  my $STATUS = $TASK->contactw;
-  $TASK->obeyw("findoff", "$param");
-  $ams->messages(0);
+  local $ENV{'ADAM_DIR'} = ( defined( $ENV{'ADAM_DIR'} ) ?
+                             $ENV{'ADAM_DIR'} . "/corr" :
+                             $ENV{'HOME'} . "/adam/corr" );
+  my @findoffargs = ( $findoff_bin,
+                      "ndfnames=false",
+                      "error=5",
+                      "maxdisp=!",
+                      "minsep=5",
+                      "fast=yes",
+                      "failsafe=yes",
+                      "logto=neither",
+                      "namelist=!",
+                      "complete=0.15",
+                      "inlist=^$findoff_input",
+                      "outlist='*.off'" );
+  my $findoffexit = system( @findoffargs );
 
 # Read in the first output catalog.
   my $outfile1 = $catfile1 . ".off";
@@ -171,6 +181,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    $cat1->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
@@ -204,6 +215,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    $cat2->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
