@@ -70,8 +70,8 @@ sub correlate {
 # Grab the arguments, and make sure they're defined and are
 # Astro::Catalog objects (the catalogues, at least).
   my %args = @_;
-  my $cat1 = $args{'catalog1'};
-  my $cat2 = $args{'catalog2'};
+  my $cat1 = dclone( $args{'catalog1'} );
+  my $cat2 = dclone( $args{'catalog2'} );
 
   if( ! defined( $cat1 ) ||
       ! UNIVERSAL::isa( $cat1, "Astro::Catalog" ) ) {
@@ -111,6 +111,8 @@ sub correlate {
 # Do so using Astro::Catalog.
   $cat1->write_catalog( Format => 'FINDOFF', File => $catfile1 );
   $cat2->write_catalog( Format => 'FINDOFF', File => $catfile2 );
+  print "Input catalog 1 written to $catfile1.\n" if $DEBUG;
+  print "Input catalog 2 written to $catfile2.\n" if $DEBUG;
 
 # Create two hash lookup tables. Key will be the "FINDOFF-ed" ID,
 # which is the original ID with all non-numeric characters removed,
@@ -118,17 +120,19 @@ sub correlate {
 # stars after the correlation has happened.
   my %lookup_cat1;
   my %lookup_cat2;
-  foreach my $star ( $cat1->stars ) {
-    my $newid = $star->id;
+  my $cat1stars = $cat1->stars;
+  foreach my $cat1star ( @$cat1stars ) {
+    my $newid = $cat1star->id;
     $newid =~ s/[^\d]//g;
-    $lookup_cat1{$newid} = $star->id;
-    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    $lookup_cat1{$newid} = $cat1star->id;
+#    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
-  foreach my $star ( $cat2->stars ) {
-    my $newid = $star->id;
+  my $cat2stars = $cat2->stars;
+  foreach my $cat2star ( @$cat2stars ) {
+    my $newid = $cat2star->id;
     $newid =~ s/[^\d]//g;
-    $lookup_cat2{$newid} = $star->id;
-    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    $lookup_cat2{$newid} = $cat2star->id;
+#    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
 
 # We need to write an input file for FINDOFF that lists the above two
@@ -181,6 +185,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    next if ! defined( $oldstar );
     $cat1->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
@@ -215,6 +220,7 @@ sub correlate {
 # Get the star's information.
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
+    next if ! defined( $oldstar );
     $cat2->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
