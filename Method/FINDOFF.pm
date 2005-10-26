@@ -83,7 +83,12 @@ sub correlate {
   }
 
   my $keeptemps = defined( $args{'keeptemps'} ) ? $args{'keeptemps'} : 0;
-  my $temp = defined( $args{'temp'} ) ? $args{'temp'} : tempdir();
+  my $temp;
+  if( exists( $args{'temp'} ) && defined( $args{'temp'} ) ) {
+    $temp = $args{'temp'};
+  } else {
+    $temp = tempdir( UNLINK => ! $keeptemps );
+  }
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
 
 # Try to find the FINDOFF binary. First, check to see if
@@ -137,7 +142,7 @@ sub correlate {
 
 # We need to write an input file for FINDOFF that lists the above two
 # input files.
-  ( my $findoff_fh, my $findoff_input ) = tempfile( DIR => $temp );
+  ( my $findoff_fh, my $findoff_input ) = tempfile( DIR => $temp, UNLINK => 1 );
   print $findoff_fh "$catfile1\n$catfile2\n";
   close $findoff_fh;
 
@@ -150,6 +155,7 @@ sub correlate {
   local $ENV{'ADAM_DIR'} = ( defined( $ENV{'ADAM_DIR'} ) ?
                              $ENV{'ADAM_DIR'} . "/corr" :
                              $ENV{'HOME'} . "/adam/corr" );
+
   my @findoffargs = ( $findoff_bin,
                       "ndfnames=false",
                       "error=5",
@@ -238,6 +244,8 @@ sub correlate {
   unlink $catfile2 unless ( $DEBUG || $keeptemps );
   unlink $outfile1 unless ( $DEBUG || $keeptemps );
   unlink $outfile2 unless ( $DEBUG || $keeptemps );
+
+  unlink $findoff_input unless ( $DEBUG || $keeptemps );
 
   return ( $corrcat1, $corrcat2 );
 
