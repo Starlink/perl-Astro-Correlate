@@ -70,6 +70,10 @@ sub new {
   # Configure the object.
   $corr->_configure( \%args );
 
+  # Set up default options.
+  $corr->keeptemps( 0 ) if ( ! defined( $corr->keeptemps ) );
+  $corr->temp( tempdir( CLEANUP => ( ! $corr->keeptemps ) ) ) if ( ! defined( $corr->temp ) );
+
   # And return the object.
   return $corr;
 }
@@ -188,7 +192,9 @@ sub temp {
     $self->{TEMP} = $temp;
   }
   if( ! defined( $self->{TEMP} ) ) {
-    $self->{TEMP} = tempdir();
+    $self->{TEMP} = tempdir( CLEANUP => ( defined( $self->keeptemps )
+                                          ? ! $self->keeptemps
+                                          : 1 ) );
   }
   return $self->{TEMP};
 }
