@@ -112,7 +112,7 @@ sub correlate {
 # environment variable. If that doesn't find it, use
 # Starlink::Config. If that doesn't work, croak.
   my $findoff_bin;
-  if( if( defined( $ENV{'CCDPACK_DIR'} ) &&
+  if( defined( $ENV{'CCDPACK_DIR'} ) &&
       -d $ENV{'CCDPACK_DIR'} &&
       -e File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" ) ) {
     $findoff_bin = File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" );
@@ -146,14 +146,14 @@ sub correlate {
     my $newid = $cat1star->id;
     $newid =~ s/[^\d]//g;
     $lookup_cat1{$newid} = $cat1star->id;
-    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    print "Catalogue 1 star with original ID of " . $cat1star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
   my $cat2stars = $cat2->stars;
   foreach my $cat2star ( @$cat2stars ) {
     my $newid = $cat2star->id;
     $newid =~ s/[^\d]//g;
     $lookup_cat2{$newid} = $cat2star->id;
-    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    print "Catalogue 2 star with original ID of " . $cat2star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
 
 # We need to write an input file for FINDOFF that lists the above two
