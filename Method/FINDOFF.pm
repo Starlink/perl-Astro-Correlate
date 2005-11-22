@@ -26,6 +26,7 @@ use Storable qw/ dclone /;
 use Starlink::ADAM;
 use Starlink::AMS::Init;
 use Starlink::AMS::Task;
+use Starlink::Config qw/ :override /;
 use Starlink::EMS qw/ :sai get_facility_error /;
 
 our $VERSION = '0.01';
@@ -59,8 +60,24 @@ matched objects.
 
 This method takes the following optional named arguments:
 
+=item keeptemps - If this argument is set to true (1), then this
+method will keep temporary files used in processing. Defaults to
+false.
+
+=item temp - Set the directory to hold temporary files. If not set,
+then a new temporary directory will be created using File::Temp.
+
 =item verbose - If this argument is set to true (1), then this method will
 print progress statements. Defaults to false.
+
+This method uses the Starlink FINDOFF task, which is part of
+CCDPACK. In order for this method to work it must be able to find
+FINDOFF. It first looks in the directory pointed to by the CCDPACK_DIR
+environment variable, then it looks in the Starlink binary files
+directory pointed to by the Starlink::Config module, with C</ccdpack>
+appended. If either of these fail, then this method will croak. See
+the C<Starlink::Config> module for information on overriding the base
+Starlink directory for non-standard installations.
 
 =cut
 
@@ -91,18 +108,17 @@ sub correlate {
   }
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
 
-# Try to find the FINDOFF binary. First, check to see if
-# the CCDPACK_DIR environment variable has been set. If it
-# hasn't, check in /star/bin/ccdpack. If that is nonexistant,
-# croak with an error.
+# Try to find the FINDOFF binary. First, try the CCDPACK_DIR
+# environment variable. If that doesn't find it, use
+# Starlink::Config. If that doesn't work, croak.
   my $findoff_bin;
-  if( defined( $ENV{'CCDPACK_DIR'} ) &&
+  if( if( defined( $ENV{'CCDPACK_DIR'} ) &&
       -d $ENV{'CCDPACK_DIR'} &&
       -e File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" ) ) {
     $findoff_bin = File::Spec->catfile( $ENV{'CCDPACK_DIR'}, "findoff" );
-  } elsif( -d File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack" ) &&
-           -e File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "findoff" ) ) {
-    $findoff_bin = File::Spec->catfile( File::Spec->rootdir(), "star", "bin", "ccdpack", "findoff" );
+  } elsif( -d File::Spec->catfile( $StarConfig{Star_Bin}, "ccdpack" ) &&
+           -e File::Spec->catfile( $StarConfig{Star_Bin}, "ccdpack", "findoff" ) ) {
+    $findoff_bin = File::Spec->catfile( $StarConfig{Star_Bin}, "ccdpack", "findoff" );
   } else {
     croak "Could not find FINDOFF binary.\n";
   }
@@ -130,14 +146,14 @@ sub correlate {
     my $newid = $cat1star->id;
     $newid =~ s/[^\d]//g;
     $lookup_cat1{$newid} = $cat1star->id;
-#    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    print "Catalogue 1 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
   my $cat2stars = $cat2->stars;
   foreach my $cat2star ( @$cat2stars ) {
     my $newid = $cat2star->id;
     $newid =~ s/[^\d]//g;
     $lookup_cat2{$newid} = $cat2star->id;
-#    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    print "Catalogue 2 star with original ID of " . $star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
 
 # We need to write an input file for FINDOFF that lists the above two
@@ -170,8 +186,12 @@ sub correlate {
                       "outlist='*.off'" );
   my $findoffexit = system( @findoffargs );
 
-# Read in the first output catalog.
+# Read in the first output catalog. If it doesn't exist, croak because
+# FINDOFF has failed to find a correlation.
   my $outfile1 = $catfile1 . ".off";
+  if( ! -e $outfile1 ) {
+    croak "FINDOFF failed to find a correlation between the two input catalogues";
+  }
   my $tempcat = new Astro::Catalog( Format => 'FINDOFF',
                                     File => $outfile1 );
 # Loop through the stars, making a new catalogue with new stars using
@@ -206,6 +226,9 @@ sub correlate {
 
 # Do the same for the second catalogue.
   my $outfile2 = $catfile2 . ".off";
+  if( ! -e $outfile2 ) {
+    croak "FINDOFF failed to find a correlation between the two input catalogues";
+  }
   $tempcat = new Astro::Catalog( Format => 'FINDOFF',
                                  File => $outfile2 );
 
@@ -252,6 +275,12 @@ sub correlate {
 }
 
 =back
+
+=head1 SEE ALSO
+
+C<Astro::Correlate>, C<Starlink::Config>
+
+Starlink User Note 139.
 
 =head1 REVISION
 
