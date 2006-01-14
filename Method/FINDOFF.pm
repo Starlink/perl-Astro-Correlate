@@ -145,6 +145,7 @@ sub correlate {
   foreach my $cat1star ( @$cat1stars ) {
     my $newid = $cat1star->id;
     $newid =~ s/[^\d]//g;
+    $newid = int( $newid );
     $lookup_cat1{$newid} = $cat1star->id;
     print "Catalogue 1 star with original ID of " . $cat1star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
@@ -152,6 +153,7 @@ sub correlate {
   foreach my $cat2star ( @$cat2stars ) {
     my $newid = $cat2star->id;
     $newid =~ s/[^\d]//g;
+    $newid = int( $newid );
     $lookup_cat2{$newid} = $cat2star->id;
     print "Catalogue 2 star with original ID of " . $cat2star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
