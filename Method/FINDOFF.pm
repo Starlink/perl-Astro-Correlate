@@ -64,8 +64,14 @@ This method takes the following optional named arguments:
 method will keep temporary files used in processing. Defaults to
 false.
 
+=item messages - If set to true (1), then this method will print
+messages from the FINDOFF task during processing. Defaults to false.
+
 =item temp - Set the directory to hold temporary files. If not set,
 then a new temporary directory will be created using File::Temp.
+
+=item timeout - Set the time in seconds to wait for the CCDPACK
+monolith to time out. Defaults to 60 seconds.
 
 =item verbose - If this argument is set to true (1), then this method will
 print progress statements. Defaults to false.
@@ -107,6 +113,8 @@ sub correlate {
     $temp = tempdir( UNLINK => ! $keeptemps );
   }
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
+  my $messages = defined( $args{'messages'} ) ? $args{'messages'} : 0;
+  my $timeout = defined( $args{'timeout'} ) ? $args{'timeout'} : 60;
 
 # Try to find the FINDOFF binary. First, try the CCDPACK_DIR
 # environment variable. If that doesn't find it, use
@@ -169,13 +177,12 @@ sub correlate {
   $param .= " logto=terminal namelist=! complete=0.15";
   $param .= " inlist=^$findoff_input outlist='*.off'";
 
-# Do the extraction.
+# Do the correlation.
   local $ENV{'ADAM_DIR'} = ( defined( $ENV{'ADAM_DIR'} ) ?
                              $ENV{'ADAM_DIR'} . "/corr" :
                              $ENV{'HOME'} . "/adam/corr" );
 
-  my @findoffargs = ( $findoff_bin,
-                      "ndfnames=false",
+  my @findoffargs = ( "ndfnames=false",
                       "error=5",
                       "maxdisp=!",
                       "minsep=5",
@@ -186,7 +193,22 @@ sub correlate {
                       "complete=0.15",
                       "inlist=^$findoff_input",
                       "outlist='*.off'" );
-  my $findoffexit = system( @findoffargs );
+
+  my $ams = new Starlink::AMS::Init(1);
+  $ams->timeout( $timeout );
+  $ams->messages( $messages );
+  if( ! defined( $TASK ) ) {
+    $TASK = new Starlink::AMS::Task( "findoff", "/star/bin/ccdpack/findoff" );
+  }
+  my $STATUS = $TASK->contactw;
+  if( ! $STATUS ) {
+    croak "Could not contact FINDOFF monolith";
+  }
+  $STATUS = $TASK->obeyw("findoff", join( " ", @findoffargs ) );
+  if( $STATUS != SAI__OK && $STATUS != &Starlink::ADAM::DTASK__ACTCOMPLETE ) {
+    ( my $facility, my $ident, my $text ) = get_facility_error( $STATUS );
+    croak "Error in running FINDOFF: $STATUS - $text";
+  }
 
 # Read in the first output catalog. If it doesn't exist, croak because
 # FINDOFF has failed to find a correlation.
