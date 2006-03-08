@@ -72,6 +72,8 @@ sub new {
 
   # Set up default options.
   $corr->keeptemps( 0 ) if ( ! defined( $corr->keeptemps ) );
+  $corr->messages( 0 ) if ( ! defined( $corr->messages ) );
+  $corr->timeout( 60 ) if ( ! defined( $corr->timeout ) );
   $corr->temp( tempdir( CLEANUP => ( ! $corr->keeptemps ) ) ) if ( ! defined( $corr->temp ) );
 
   # And return the object.
@@ -153,6 +155,30 @@ sub keeptemps {
   return $self->{KEEPTEMPS};
 }
 
+=item B<messages>
+
+Whether or not to display messages from the correlation task while
+processing.
+
+  my $messages = $corr->messages;
+  $corr->messages( 1 );
+
+If set to true, then messages from the correlation task will be
+printed.
+
+Defaults to false.
+
+=cut
+
+sub messages {
+  my $self = shift;
+  if( @_ ) {
+    my $messages = shift;
+    $self->{MESSAGES} = $messages;
+  }
+  return $self->{MESSAGES};
+}
+
 =item B<method>
 
 Retrieve or set the method to be used for correlation.
@@ -197,6 +223,26 @@ sub temp {
                                           : 1 ) );
   }
   return $self->{TEMP};
+}
+
+=item B<timeout>
+
+Retrieve or set the timeout.
+
+  my $timeout = $corr->timeout;
+  $corr->timeout( 120 );
+
+Time is in seconds and defaults to 60.
+
+=cut
+
+sub timeout {
+  my $self = shift;
+  if( @_ ) {
+    my $timeout = shift;
+    $self->{TIMEOUT} = $timeout;
+  }
+  return $self->{TIMEOUT};
 }
 
 =item B<verbose>
@@ -259,7 +305,9 @@ sub correlate {
   ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $self->catalog1,
                                                     catalog2 => $self->catalog2,
                                                     keeptemps => $self->keeptemps,
+                                                    messages => $self->messages,
                                                     temp => $self->temp,
+                                                    timeout => $self->timeout,
                                                     verbose => $self->verbose );
 
   # Return the correlated catalogues;
