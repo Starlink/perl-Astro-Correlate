@@ -196,7 +196,10 @@ sub correlate {
 
   my $ams = new Starlink::AMS::Init(1);
   $ams->timeout( $timeout );
-  $ams->messages( $messages );
+  my $set_messages = $ams->messages;
+  if( ! defined( $set_messages ) ) {
+    $ams->messages( $messages );
+  }
   if( ! defined( $TASK ) ) {
     $TASK = new Starlink::AMS::Task( "findoff", "/star/bin/ccdpack/findoff" );
   }
