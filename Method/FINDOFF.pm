@@ -149,6 +149,7 @@ sub correlate {
 # stars after the correlation has happened.
   my %lookup_cat1;
   my %lookup_cat2;
+
   my $cat1stars = $cat1->stars;
   foreach my $cat1star ( @$cat1stars ) {
     my $newid = $cat1star->id;
@@ -157,6 +158,7 @@ sub correlate {
     $lookup_cat1{$newid} = $cat1star->id;
     print "Catalogue 1 star with original ID of " . $cat1star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
   }
+
   my $cat2stars = $cat2->stars;
   foreach my $cat2star ( @$cat2stars ) {
     my $newid = $cat2star->id;
@@ -239,7 +241,6 @@ sub correlate {
     my $oldstar = $cat1->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
     next if ! defined( $oldstar );
-    $cat1->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
@@ -277,7 +278,6 @@ sub correlate {
     my $oldstar = $cat2->popstarbyid( $oldid );
     $oldstar = $oldstar->[0];
     next if ! defined( $oldstar );
-    $cat2->pushstar( $oldstar );
 
 # Set the ID to the new star's ID.
     $oldstar->id( $star->id );
