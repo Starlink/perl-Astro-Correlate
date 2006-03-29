@@ -2,4 +2,5 @@ Correlate.pm
 Makefile.PL
 MANIFEST
 Method/FINDOFF.pm
+Method/RITMatch.pm
 t/01_compile.t
