@@ -130,6 +130,50 @@ sub catalog2 {
   return $self->{CATALOG2};
 }
 
+=item B<cat1magtype>
+
+The magnitude type to use for the first catalogue.
+
+  my $magtype = $corr->cat1magtype;
+  $corr->cat1magtype( 'mag_iso' );
+
+This is used for Astro::Catalog::Item objects that have Astro::Flux
+measurements that are not standard magnitudes, and for correlation
+methods that require a measure of object brightness for optimizations
+like the RITMatch method. If this is not defined, it will default to
+'mag'.
+
+=cut
+
+sub cat1magtype {
+  my $self = shift;
+  if( @_ ) {
+    my $magtype = shift;
+    $self->{CAT1MAGTYPE} = $magtype;
+  }
+  return $self->{CAT1MAGTYPE};
+}
+
+=item B<cat2magtype>
+
+The magnitude type to use for the second catalogue.
+
+  my $magtype = $corr->cat2magtype;
+  $corr->cat2magtype( 'mag_iso' );
+
+As for cat1magtype(), but for the second catalogue.
+
+=cut
+
+sub cat2magtype {
+  my $self = shift;
+  if( @_ ) {
+    my $magtype = shift;
+    $self->{CAT2MAGTYPE} = $magtype;
+  }
+  return $self->{CAT2MAGTYPE};
+}
+
 =item B<keeptemps>
 
 Whether or not to keep temporary files after processing is completed.
@@ -304,6 +348,8 @@ sub correlate {
   # And do the correlation.
   ( $corrcat1, $corrcat2 ) = $corrclass->correlate( catalog1 => $self->catalog1,
                                                     catalog2 => $self->catalog2,
+                                                    cat1magtype => $self->cat1magtype,
+                                                    cat2magtype => $self->cat2magtype,
                                                     keeptemps => $self->keeptemps,
                                                     messages => $self->messages,
                                                     temp => $self->temp,
@@ -359,12 +405,6 @@ found or loaded, issues a warning and returns undef.
 
 sub _load_corr_plugin {
   my $method = shift;
-
-  # Set method to uppercase.
-  $method = uc( $method );
-
-  # Special case some modules so they don't all have to be
-  # upper-case.
 
   # Set the class name.
   my $class = "Astro::Correlate::Method::$method";
