@@ -22,6 +22,7 @@ use warnings::register;
 
 use Carp;
 use File::Temp qw/ tempfile /;
+use File::SearchPath qw/ searchpath /;
 use Storable qw/ dclone /;
 
 our $VERSION = '0.01';
@@ -81,7 +82,8 @@ print progress statements. Defaults to false.
 This method usees the RIT Match application. In order for this method
 to work it must be able to find the match binary. It looks in the
 directory pointed to by the MATCH_DIR environment variable, and if
-that fails, this method will croak.
+that fails, looks through your $PATH. If it cannot be found, this
+method will croak.
 
 =cut
 
@@ -119,14 +121,18 @@ sub correlate {
   my $cat2magtype = defined( $args{'cat2magtype'} ) ? $args{'cat2magtype'} : 'mag';
 
 # Try to find the match binary in the directory pointed to by the
-# MATCH_DIR environment variable. If that doesn't work, croak.
+# MATCH_DIR environment variable. If that doesn't work, check the
+# user's $PATH. If that doesn't work, croak.
   my $match_bin;
   if( defined( $ENV{'MATCH_DIR'} ) &&
       -d $ENV{'MATCH_DIR'} &&
       -e File::Spec->catfile( $ENV{'MATCH_DIR'}, "match" ) ) {
     $match_bin = File::Spec->catfile( $ENV{'MATCH_DIR'}, "match" );
   } else {
-    croak "Could not find match binary. Ensure MATCH_DIR environment variable is set";
+    $match_bin = searchpath( "match" );
+    if( ! defined( $match_bin ) ) {
+      croak "Could not find match binary. Ensure MATCH_DIR environment variable is set";
+    }
   }
 
   print "match binary is in $match_bin\n" if $DEBUG;
