@@ -9,6 +9,7 @@ WriteMakefile(
         'VERSION_FROM' => 'Correlate.pm',
         'PREREQ_PM' => {
                         'Astro::Catalog' => 0,
+                        'File::SearchPath' => 0,
                        },
         ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
          (ABSTRACT_FROM => 'Correlate.pm',
