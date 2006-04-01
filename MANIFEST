@@ -1,6 +1,10 @@
 Correlate.pm
 Makefile.PL
 MANIFEST
+README
 Method/FINDOFF.pm
 Method/RITMatch.pm
+Method/README
 t/01_compile.t
+META.yml
+
