@@ -430,11 +430,11 @@ $Id$
 
 =head1 AUTHORS
 
-Brad Cavanagh E<lt>b.cavanagh@jach.hawaii.eduE<gt>
+Brad Cavanagh <brad.cavanagh@gmail.com>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2005 Particle Physics and Astronomy Research Council.
+Copyright (C) 2005-2006 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
