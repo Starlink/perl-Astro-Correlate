@@ -214,6 +214,16 @@ sub correlate {
     $newid++;
   }
 
+# Delete the temporary files if we're not in debug mode.
+  if( ! $DEBUG ) {
+    unlink $catfile1;
+    unlink $catfile2;
+    unlink $outfilebase . ".mtA";
+    unlink $outfilebase . ".mtB";
+    unlink $outfilebase . ".unA";
+    unlink $outfilebase . ".unB";
+  }
+
   return ( $corrcat1, $corrcat2 );
 }
 
@@ -231,7 +241,7 @@ $Id$
 
 =head1 AUTHORS
 
-Brad Cavanagh E<lt>b.cavanagh@jach.hawaii.eduE<gt>
+Brad Cavanagh <brad.cavanagh@gmail.com>
 
 =head1 COPYRIGHT
 
