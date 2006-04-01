@@ -14,11 +14,21 @@ find( { wanted => \&wanted,
       "blib" );
 
 # Set the number of tests we're going to do.
-plan tests => scalar( @modules );
+plan tests => scalar( @modules ) + 1;
 
 # Loop through each module and check if require_ok works.
 foreach my $module ( @modules ) {
   require_ok( $module );
+}
+
+# Test the FINDOFF method separately, only if we have the Starlink
+# modules installed. Test the availability of Starlink::Config, and
+# assume that if that's installed then they're all installed and we
+# can test the compilation of FINDOFF.
+eval{ require Starlink::Config; };
+SKIP: {
+  skip "Starlink Perl modules not installed", 1 if $@;
+  require_ok( "Astro::Correlate::Method::FINDOFF" );
 }
 
 # This determines whether we are interested in the module
@@ -29,6 +39,9 @@ sub wanted {
 
   # is it a module
   return unless $pm =~ /\.pm$/;
+
+  # Special case: return if this is FINDOFF.
+  return if $pm =~ /FINDOFF/;
 
   # Remove the blib/lib (assumes unix!)
   $pm =~ s|^blib/lib/||;
