@@ -13,6 +13,6 @@ WriteMakefile(
                        },
         ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
          (ABSTRACT_FROM => 'Correlate.pm',
-          AUTHOR     => 'Brad Cavanagh <b.cavanagh@jach.hawaii.edu>') : ()),
+          AUTHOR     => 'Brad Cavanagh <brad.cavanagh@gmail.com>') : ()),
         'dist'   => {COMPRESS=>'gzip -9f', SUFFIX=>'gz'},
 );

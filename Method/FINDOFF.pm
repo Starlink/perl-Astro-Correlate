@@ -315,7 +315,7 @@ $Id$
 
 =head1 AUTHORS
 
-Brad Cavanagh E<lt>b.cavanagh@jach.hawaii.eduE<gt>
+Brad Cavanagh <brad.cavanagh@gmail.com>
 
 =head1 COPYRIGHT
 
