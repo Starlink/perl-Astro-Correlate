@@ -185,14 +185,14 @@ sub correlate {
                              $ENV{'HOME'} . "/adam/corr" );
 
   my @findoffargs = ( "ndfnames=false",
-                      "error=5",
+                      "error=1",
                       "maxdisp=!",
                       "minsep=5",
                       "fast=yes",
                       "failsafe=yes",
                       "logto=neither",
                       "namelist=!",
-                      "complete=0.15",
+                      "complete=0.05",
                       "inlist=^$findoff_input",
                       "outlist='*.off'" );
 
