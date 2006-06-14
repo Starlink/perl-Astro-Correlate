@@ -185,7 +185,7 @@ sub correlate {
                              $ENV{'HOME'} . "/adam/corr" );
 
   my @findoffargs = ( "ndfnames=false",
-                      "error=1",
+                      "error=2",
                       "maxdisp=!",
                       "minsep=5",
                       "fast=yes",
