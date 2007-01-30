@@ -203,7 +203,7 @@ sub correlate {
     $ams->messages( $messages );
   }
   if( ! defined( $TASK ) ) {
-    $TASK = new Starlink::AMS::Task( "findoff", "/star/bin/ccdpack/findoff" );
+    $TASK = new Starlink::AMS::Task( "findoff", "$findoff_bin" );
   }
   my $STATUS = $TASK->contactw;
   if( ! $STATUS ) {
