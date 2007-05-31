@@ -153,6 +153,27 @@ sub correlate {
                         mag_type => $cat2magtype );
   print "Input catalog 2 written to $catfile2.\n" if $DEBUG;
 
+# Create two hash lookup tables. Key will be the "match-ed" ID, which
+# is the original ID with all non-numeric characters removed, and
+# value will be the original ID. This will allow us to match up stars
+# after the correlation has happened.
+  my %lookup_cat1;
+  my %lookup_cat2;
+
+  my $cat1stars = $cat1->stars;
+  my $newid = 1;
+  foreach my $cat1star ( @$cat1stars ) {
+    $lookup_cat1{$newid} = $cat1star->id;
+    $newid++;
+  }
+
+  my $cat2stars = $cat2->stars;
+  $newid = 1;
+  foreach my $cat2star ( @$cat2stars ) {
+    $lookup_cat2{$newid} = $cat2star->id;
+    $newid++;
+  }
+
 # Create a base filename for the output catalogues. Put it in the
 # temporary directory previously set up.
   my $outfilebase = File::Spec->catfile( $temp, "outfile$$" );
@@ -185,15 +206,31 @@ sub correlate {
 # a combination of the new ID and the old information.
   my $corrcat1 = new Astro::Catalog();
   my @stars = $tempcat->stars;
-  my $newid = 1;
+  $newid = 1;
   foreach my $star ( @stars ) {
 
-    my $id = $star->id;
-    my $oldstar1 = $cat1->popstarbyid( $id );
-    $oldstar1 = $oldstar1->[0];
-    next if ! defined( $oldstar1 );
-    $oldstar1->id( $newid );
-    $corrcat1->pushstar( $oldstar1 );
+# The old ID is found in the first column of the star's comment.
+# However, this old ID has been "match-ed", i.e. all non-numeric
+# characters have been stripped from it. Use the lookup table we
+# generated earlier to find the proper old ID.
+    $star->id =~ /^(\w+)/;
+    my $oldmatchid = $1;
+    my $oldid = $lookup_cat1{$oldmatchid};
+
+# Get the star's information.
+    my $oldstar = $cat1->popstarbyid( $oldid );
+    $oldstar = $oldstar->[0];
+    next if ! defined( $oldstar );
+
+# Set the ID to the new star's ID.
+    $oldstar->id( $newid );
+
+# Set the comment denoting the old ID.
+    $oldstar->comment( "Old ID: " . $oldid );
+
+# And push this star onto the output catalogue.
+    $corrcat1->pushstar( $oldstar );
+
     $newid++;
   }
 
@@ -205,12 +242,29 @@ sub correlate {
   @stars = $tempcat->stars;
   $newid = 1;
   foreach my $star ( @stars ) {
-    my $id = $star->id;
-    my $oldstar2 = $cat2->popstarbyid( $id );
-    $oldstar2 = $oldstar2->[0];
-    next if ! defined( $oldstar2 );
-    $oldstar2->id( $newid );
-    $corrcat2->pushstar( $oldstar2 );
+
+# The old ID is found in the first column of the star's comment.
+# However, this old ID has been "match-ed", i.e. all non-numeric
+# characters have been stripped from it. Use the lookup table we
+# generated earlier to find the proper old ID.
+    $star->id =~ /^(\w+)/;
+    my $oldmatchid = $1;
+    my $oldid = $lookup_cat2{$oldmatchid};
+
+# Get the star's information.
+    my $oldstar = $cat2->popstarbyid( $oldid );
+    $oldstar = $oldstar->[0];
+    next if ! defined( $oldstar );
+
+# Set the ID to the new star's ID.
+    $oldstar->id( $newid );
+
+# Set the comment denoting the old ID.
+    $oldstar->comment( "Old ID: " . $oldid );
+
+# And push this star onto the output catalogue.
+    $corrcat2->pushstar( $oldstar );
+
     $newid++;
   }
 

@@ -143,29 +143,25 @@ sub correlate {
   print "Input catalog 1 written to $catfile1.\n" if $DEBUG;
   print "Input catalog 2 written to $catfile2.\n" if $DEBUG;
 
-# Create two hash lookup tables. Key will be the "FINDOFF-ed" ID,
-# which is the original ID with all non-numeric characters removed,
-# and value will be the original ID. This will allow us to match up
-# stars after the correlation has happened.
+# Create two hash lookup tables. Key will be an integer incrementing
+# from 1, value will be the original ID.
   my %lookup_cat1;
   my %lookup_cat2;
 
   my $cat1stars = $cat1->stars;
+  my $newid = 1;
   foreach my $cat1star ( @$cat1stars ) {
-    my $newid = $cat1star->id;
-    $newid =~ s/[^\d]//g;
-    $newid = int( $newid );
     $lookup_cat1{$newid} = $cat1star->id;
     print "Catalogue 1 star with original ID of " . $cat1star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    $newid++;
   }
 
   my $cat2stars = $cat2->stars;
+  $newid = 1;
   foreach my $cat2star ( @$cat2stars ) {
-    my $newid = $cat2star->id;
-    $newid =~ s/[^\d]//g;
-    $newid = int( $newid );
     $lookup_cat2{$newid} = $cat2star->id;
     print "Catalogue 2 star with original ID of " . $cat2star->id . " has FINDOFF-ed ID of $newid\n" if $DEBUG;
+    $newid++;
   }
 
 # We need to write an input file for FINDOFF that lists the above two
