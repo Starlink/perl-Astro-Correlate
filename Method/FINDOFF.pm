@@ -144,7 +144,9 @@ sub correlate {
   print "Input catalog 2 written to $catfile2.\n" if $DEBUG;
 
 # Create two hash lookup tables. Key will be an integer incrementing
-# from 1, value will be the original ID.
+# from 1, value will be the original ID. We have to renumber because
+# some modern catalogues have star IDs where the integer part exceeds
+# a 32-bit integer (as used by FINDOFF)
   my %lookup_cat1;
   my %lookup_cat2;
 
