@@ -174,14 +174,14 @@ sub correlate {
   my %lookup_cat1;
   my %lookup_cat2;
 
-  my $cat1stars = $cat1->stars;
+  $cat1stars = $cat1->stars;
   my $newid = 1;
   foreach my $cat1star ( @$cat1stars ) {
     $lookup_cat1{$newid} = $cat1star->id;
     $newid++;
   }
 
-  my $cat2stars = $cat2->stars;
+  $cat2stars = $cat2->stars;
   $newid = 1;
   foreach my $cat2star ( @$cat2stars ) {
     $lookup_cat2{$newid} = $cat2star->id;
