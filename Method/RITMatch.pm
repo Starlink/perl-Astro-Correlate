@@ -67,8 +67,7 @@ catalogue.
 method will keep temporary files used in processing. Defaults to
 false.
 
-=item messages - If set to true (1), then this method will print
-messages from the FINDOFF task during processing. Defaults to false.
+=item messages - no effect.
 
 =item temp - Set the directory to hold temporary files. If not set,
 then a new temporary directory will be created using File::Temp.
@@ -140,6 +139,21 @@ sub correlate {
 # Get two temporary filenames for catalog files.
   ( undef, my $catfile1 ) = tempfile( DIR => $temp );
   ( undef, my $catfile2 ) = tempfile( DIR => $temp );
+
+# Match is sensitive to the scaling of the problem, requiring that the
+# error is of order 1, and certainly less than 50. To meet this requirement
+# scale the X and Y coordinates to have a range of 200 (XXX make this some
+# multiple of the image scale).
+  my $cat1stars = $cat1->stars;
+  foreach my $cat1star ( @$cat1stars ) {
+    $cat1star->x( $cat1star->x() / 10.0 );
+    $cat1star->y( $cat1star->y() / 10.0 );
+  }
+  my $cat2stars = $cat2->stars;
+  foreach my $cat2star ( @$cat2stars ) {
+    $cat2star->x( $cat2star->x() / 10.0 );
+    $cat2star->y( $cat2star->y() / 10.0 );
+  }
 
 # Write the two input catalogues for match.
   print "Writing catalog 1 to $catfile1 using $cat1magtype magnitude.\n" if $DEBUG;
@@ -225,6 +239,10 @@ sub correlate {
 # Set the ID to the new star's ID.
     $oldstar->id( $newid );
 
+# Restore X and Y.
+    $oldstar->x( $oldstar->x() * 10.0 );
+    $oldstar->y( $oldstar->y() * 10.0 );
+
 # Set the comment denoting the old ID.
     $oldstar->comment( "Old ID: " . $oldid );
 
@@ -258,6 +276,10 @@ sub correlate {
 
 # Set the ID to the new star's ID.
     $oldstar->id( $newid );
+
+# Restore X and Y.
+    $oldstar->x( $oldstar->x() * 10.0 );
+    $oldstar->y( $oldstar->y() * 10.0 );
 
 # Set the comment denoting the old ID.
     $oldstar->comment( "Old ID: " . $oldid );
