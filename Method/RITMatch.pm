@@ -25,7 +25,7 @@ use File::Temp qw/ tempfile /;
 use File::SearchPath qw/ searchpath /;
 use Storable qw/ dclone /;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $DEBUG = 0;
 
 =head1 METHODS
@@ -108,6 +108,9 @@ sub correlate {
         ;
   }
 
+# Retrieve the scaling factor.
+  my $scale = _determine_scaling_factor( $cat1, $cat2 );
+
   my $keeptemps = defined( $args{'keeptemps'} ) ? $args{'keeptemps'} : 0;
   my $temp;
   if( exists( $args{'temp'} ) && defined( $args{'temp'} ) ) {
@@ -146,13 +149,13 @@ sub correlate {
 # multiple of the image scale).
   my $cat1stars = $cat1->stars;
   foreach my $cat1star ( @$cat1stars ) {
-    $cat1star->x( $cat1star->x() / 10.0 );
-    $cat1star->y( $cat1star->y() / 10.0 );
+    $cat1star->x( $cat1star->x() / $scale );
+    $cat1star->y( $cat1star->y() / $scale );
   }
   my $cat2stars = $cat2->stars;
   foreach my $cat2star ( @$cat2stars ) {
-    $cat2star->x( $cat2star->x() / 10.0 );
-    $cat2star->y( $cat2star->y() / 10.0 );
+    $cat2star->x( $cat2star->x() / $scale );
+    $cat2star->y( $cat2star->y() / $scale );
   }
 
 # Write the two input catalogues for match.
@@ -240,8 +243,8 @@ sub correlate {
     $oldstar->id( $newid );
 
 # Restore X and Y.
-    $oldstar->x( $oldstar->x() * 10.0 );
-    $oldstar->y( $oldstar->y() * 10.0 );
+    $oldstar->x( $oldstar->x() * $scale );
+    $oldstar->y( $oldstar->y() * $scale );
 
 # Set the comment denoting the old ID.
     $oldstar->comment( "Old ID: " . $oldid );
@@ -278,8 +281,8 @@ sub correlate {
     $oldstar->id( $newid );
 
 # Restore X and Y.
-    $oldstar->x( $oldstar->x() * 10.0 );
-    $oldstar->y( $oldstar->y() * 10.0 );
+    $oldstar->x( $oldstar->x() * $scale );
+    $oldstar->y( $oldstar->y() * $scale );
 
 # Set the comment denoting the old ID.
     $oldstar->comment( "Old ID: " . $oldid );
@@ -304,6 +307,46 @@ sub correlate {
 }
 
 =back
+
+=head2 Private Methods
+
+=over 4
+
+=item B<_determine_scaling_factor>
+
+match v0.09 and above had a requirement (or strong suggestion) that
+coordinate values be less than about 5000. Testing has shown that this
+limit is closer to about 1000, so this method looks at all of the
+coordinate values in the two catalogues and determines a scaling
+factor to bring those coordinate values under 1000.
+
+  my $factor = _determine_scaling_factor( $cat1, $cat2 );
+
+=cut
+
+sub _determine_scaling_factor {
+  my $cat1 = shift;
+  my $cat2 = shift;
+
+  my $max = 0;
+  my $max_pos = 500;
+
+  foreach my $cat ( ( $cat1, $cat2 ) ) {
+    foreach my $item ( $cat->stars ) {
+      if( $item->x > $max ) {
+        $max = $item->x;
+      }
+      if( $item->y > $max ) {
+        $max = $item->y;
+      }
+    }
+  }
+
+  my $scale = ( $max > $max_pos ? $max / $max_pos : 1 );
+
+  return $scale;
+
+}
 
 =head1 SEE ALSO
 
