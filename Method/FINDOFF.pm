@@ -64,6 +64,9 @@ This method takes the following optional named arguments:
 method will keep temporary files used in processing. Defaults to
 false.
 
+=item positional_error - The error, in pixels, of the positions in the
+two catalogues. If not given, defaults to 2.
+
 =item messages - If set to true (1), then this method will print
 messages from the FINDOFF task during processing. Defaults to false.
 
@@ -120,6 +123,7 @@ sub correlate {
   my $verbose = defined( $args{'verbose'} ) ? $args{'verbose'} : 0;
   my $messages = defined( $args{'messages'} ) ? $args{'messages'} : 0;
   my $timeout = defined( $args{'timeout'} ) ? $args{'timeout'} : 60;
+  my $pos_error = defined( $args{'positional_error'} ) ? $args{'positional_error'} : 2;
 
 # Try to find the FINDOFF binary. First, try the CCDPACK_DIR
 # environment variable. If that doesn't find it, use
@@ -190,7 +194,7 @@ sub correlate {
                              $ENV{'HOME'} . "/adam/corr" );
 
   my @findoffargs = ( "ndfnames=false",
-                      "error=2",
+                      "error=$pos_error",
                       "maxdisp=!",
                       "minsep=5",
                       "fast=yes",

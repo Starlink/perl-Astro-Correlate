@@ -174,6 +174,26 @@ sub cat2magtype {
   return $self->{CAT2MAGTYPE};
 }
 
+=item B<positional_error>
+
+The positional error, in pixels, of the input catalogues.
+
+  my $error = $corr->positional_error;
+  $corr->positional_error( 4 );
+
+See the individual match methods for information on default values.
+
+=cut
+
+sub positional_error {
+  my $self = shift;
+  if( @_ ) {
+    my $error = shift;
+    $self->{POSITIONAL_ERROR} = $error;
+  }
+  return $self->{POSITIONAL_ERROR};
+}
+
 =item B<keeptemps>
 
 Whether or not to keep temporary files after processing is completed.
@@ -350,6 +370,7 @@ sub correlate {
                                                     catalog2 => $self->catalog2,
                                                     cat1magtype => $self->cat1magtype,
                                                     cat2magtype => $self->cat2magtype,
+                                                    positional_error => $self->positional_error,
                                                     keeptemps => $self->keeptemps,
                                                     messages => $self->messages,
                                                     temp => $self->temp,
