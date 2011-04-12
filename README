@@ -1,6 +1,6 @@
 Astro::Correlate - correlate astronomical catalogues
 
-This is release v0.01 of Astro::Correlate. This module can be used to
+This is release v1.0 of Astro::Correlate. This module can be used to
 correlate two catalogues, comparing them to determine which items are
 common between the two based on X and Y positions.
 
