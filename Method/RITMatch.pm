@@ -216,12 +216,12 @@ sub correlate {
 
 # Read in the first output catalogue of matching objects. The old ID
 # will be in the comment field.
-  my $tempcat = new Astro::Catalog( Format => 'RITMatch',
+  my $tempcat = Astro::Catalog->new( Format => 'RITMatch',
                                     File => $outfilebase . ".mtA" );
 
 # Loop through the stars, making a new catalogue with new stars using
 # a combination of the new ID and the old information.
-  my $corrcat1 = new Astro::Catalog();
+  my $corrcat1 = Astro::Catalog->new();
   my @stars = $tempcat->stars;
   $newid = 1;
   foreach my $star ( @stars ) {
@@ -256,10 +256,10 @@ sub correlate {
   }
 
 # And do the same for the second catalogue.
-  $tempcat = new Astro::Catalog( Format => 'RITMatch',
-                                 File => $outfilebase . ".mtB" );
+  $tempcat = Astro::Catalog->new( Format => 'RITMatch',
+                                  File => $outfilebase . ".mtB" );
 
-  my $corrcat2 = new Astro::Catalog();
+  my $corrcat2 = Astro::Catalog->new();
   @stars = $tempcat->stars;
   $newid = 1;
   foreach my $star ( @stars ) {
