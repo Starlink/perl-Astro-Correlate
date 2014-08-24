@@ -140,8 +140,8 @@ sub correlate {
   print "match binary is in $match_bin\n" if $DEBUG;
 
 # Get two temporary filenames for catalog files.
-  ( undef, my $catfile1 ) = tempfile( DIR => $temp );
-  ( undef, my $catfile2 ) = tempfile( DIR => $temp );
+  ( undef, my $catfile1 ) = tempfile( TEMPLATE => "cat1_XXXXXXXX", SUFFIX => ".cat", DIR => $temp );
+  ( undef, my $catfile2 ) = tempfile( TEMPLATE => "cat2_XXXXXXXX", SUFFIX => ".cat", DIR => $temp );
 
 # Match is sensitive to the scaling of the problem, requiring that the
 # error is of order 1, and certainly less than 50. To meet this requirement
@@ -193,7 +193,7 @@ sub correlate {
 
 # Create a base filename for the output catalogues. Put it in the
 # temporary directory previously set up.
-  my $outfilebase = File::Spec->catfile( $temp, "outfile$$" );
+  ( undef, my $outfilebase ) = tempfile( TEMPLATE => "matchout_XXXXXXXX", DIR => $temp );
 
 # Set up the parameter list for match.
   my @matchargs = ( "$catfile1",
