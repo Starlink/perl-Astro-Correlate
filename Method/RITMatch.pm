@@ -148,14 +148,10 @@ sub correlate {
 # scale the X and Y coordinates to have a range of 200 (XXX make this some
 # multiple of the image scale).
   my $cat1stars = $cat1->stars;
-  foreach my $cat1star ( @$cat1stars ) {
-    $cat1star->x( $cat1star->x() / $scale );
-    $cat1star->y( $cat1star->y() / $scale );
-  }
   my $cat2stars = $cat2->stars;
-  foreach my $cat2star ( @$cat2stars ) {
-    $cat2star->x( $cat2star->x() / $scale );
-    $cat2star->y( $cat2star->y() / $scale );
+  foreach my $catstar ( @$cat1stars, @$cat2stars ) {
+    $catstar->x( $catstar->x() / $scale );
+    $catstar->y( $catstar->y() / $scale );
   }
 
 # Write the two input catalogues for match.
