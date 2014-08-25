@@ -154,16 +154,83 @@ sub correlate {
     $catstar->y( $catstar->y() / $scale );
   }
 
+  # Ideally we want to be able to select a filter in catalog 2 that is closest
+  # in wavelength to that used in catalog 1. Some catalogues have multiple
+  # filters. We assume that all the stars in the catalogue have the same filters.
+  my $extractfilters = sub {
+    my $reftype = uc(shift);
+    my $starref = shift;
+    my %thesewb;
+    for my $flx ( $starref->fluxes->allfluxes ) {
+      next unless uc($flx->type) eq $reftype;
+      my $wb = $flx->waveband;
+      $thesewb{$wb->natural} = $wb;
+    }
+    return %thesewb;
+  };
+
+  my %cat1filt = $extractfilters->( $cat1magtype, $cat1stars->[0] );
+  my %cat2filt = $extractfilters->( $cat2magtype, $cat2stars->[0] );
+
+  # Pick reference filter from the catalogue containing the fewest.
+  # This will likely be the SExtractor catalogue
+  my $nb1 = scalar keys %cat1filt;
+  my $nb2 = scalar keys %cat2filt;
+
+  my $cat1filter;
+  my $cat2filter;
+  my $refwb;
+  my $searchfilt;
+  if ($nb1 < $nb2) {
+    $searchfilt = \%cat2filt;
+    $cat1filter = (keys %cat1filt)[0];
+    $refwb = $cat1filt{$cat1filter};
+  } else {
+    $searchfilt = \%cat1filt;
+    $cat2filter = (keys %cat2filt)[0];
+    $refwb = $cat2filt{$cat2filter};
+  }
+
+  # Now compare filters
+  my $otherfilt;
+  if (exists $searchfilt->{$refwb->filter}) {
+    $otherfilt = $refwb->filter;
+  } else {
+    # Look at wavelengths
+    my %diffs;
+    my $refwave = $refwb->wavelength;
+    for my $wb (keys %$searchfilt) {
+      # Compare wavelengths (assume the same units)
+      my $thiswave = $searchfilt->{$wb}->wavelength;
+      next unless defined $thiswave;
+      my $diff = abs( $refwave - $thiswave );
+      $diffs{$diff} = $wb;
+    }
+
+    my $smallest = (sort { $a <=> $b } (keys %diffs))[0];
+    $otherfilt = $diffs{$smallest};
+  }
+
+  if (!defined $cat1filter) {
+    $cat1filter = $cat1filt{$otherfilt};
+  } else {
+    $cat2filter = $cat2filt{$otherfilt};
+  }
+  print "Using filter $cat1filter for Catalog 1 and $cat2filter for Catalog 2\n"
+    if $DEBUG;
+
 # Write the two input catalogues for match.
   print "Writing catalog 1 to $catfile1 using $cat1magtype magnitude.\n" if $DEBUG;
   $cat1->write_catalog( Format => 'RITMatch',
                         File => $catfile1,
-                        mag_type => $cat1magtype );
+                        mag_type => $cat1magtype,
+                        filter => $cat1filter );
   print "Input catalog 1 written to $catfile1.\n" if $DEBUG;
   print "Writing catalog 2 to $catfile2 using $cat2magtype magnitude.\n" if $DEBUG;
   $cat2->write_catalog( Format => 'RITMatch',
                         File => $catfile2,
-                        mag_type => $cat2magtype );
+                        mag_type => $cat2magtype,
+                        filter => $cat2filter );
   print "Input catalog 2 written to $catfile2.\n" if $DEBUG;
 
 # Create two hash lookup tables. Key will be the "match-ed" ID, which
