@@ -396,12 +396,10 @@ sub _determine_scaling_factor {
 
   foreach my $cat ( ( $cat1, $cat2 ) ) {
     foreach my $item ( $cat->stars ) {
-      if( $item->x > $max ) {
-        $max = $item->x;
-      }
-      if( $item->y > $max ) {
-        $max = $item->y;
-      }
+      my $xpos = abs($item->x);
+      my $ypos = abs($item->y);
+      $max = $xpos if $xpos > $max;
+      $max = $ypos if $ypos > $max;
     }
   }
 
