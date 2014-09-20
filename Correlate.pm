@@ -8,9 +8,9 @@ Astro::Correlate - Class for cross-correlating astronomical catalogues.
 
   use Astro::Correlate;
 
-  my $corr = new Astro::Correlate( catalog1 => $cat1,
-                                   catalog2 => $cat2,
-                                   method => 'FINDOFF' );
+  my $corr = Astro::Correlate->new( catalog1 => $cat1,
+                                    catalog2 => $cat2,
+                                    method => 'FINDOFF' );
 
   $result = $corr->correlate;
 
@@ -39,8 +39,8 @@ our $VERSION = '1.0';
 
 Create a new instance of an C<Astro::Correlate> object.
 
-  $corr = new Astro::Correlate( catalog1 => $cat1,
-                                catalog2 => $cat2 );
+  $corr = Astro::Correlate->new( catalog1 => $cat1,
+                                 catalog2 => $cat2 );
 
 The two mandatory named arguments must be defined and must be
 C<Astro::Catalog> objects. Both catalogs must be comparable --

@@ -205,14 +205,14 @@ sub correlate {
                       "inlist=^$findoff_input",
                       "outlist='*.off'" );
 
-  my $ams = new Starlink::AMS::Init(1);
+  my $ams = Starlink::AMS::Init->new(1);
   $ams->timeout( $timeout );
   my $set_messages = $ams->messages;
   if( ! defined( $set_messages ) ) {
     $ams->messages( $messages );
   }
   if( ! defined( $TASK ) ) {
-    $TASK = new Starlink::AMS::Task( "findoff", "$findoff_bin" );
+    $TASK = Starlink::AMS::Task->new( "findoff", "$findoff_bin" );
   }
   my $STATUS = $TASK->contactw;
   if( ! $STATUS ) {
@@ -230,11 +230,11 @@ sub correlate {
   if( ! -e $outfile1 ) {
     croak "FINDOFF failed to find a correlation between the two input catalogues";
   }
-  my $tempcat = new Astro::Catalog( Format => 'FINDOFF',
+  my $tempcat = Astro::Catalog->new( Format => 'FINDOFF',
                                     File => $outfile1 );
 # Loop through the stars, making a new catalogue with new stars using
 # a combination of the new ID and the old information.
-  my $corrcat1 = new Astro::Catalog();
+  my $corrcat1 = Astro::Catalog->new();
   my @stars = $tempcat->stars;
   foreach my $star ( @stars ) {
 
@@ -266,12 +266,12 @@ sub correlate {
   if( ! -e $outfile2 ) {
     croak "FINDOFF failed to find a correlation between the two input catalogues";
   }
-  $tempcat = new Astro::Catalog( Format => 'FINDOFF',
-                                 File => $outfile2 );
+  $tempcat = Astro::Catalog->new( Format => 'FINDOFF',
+                                  File => $outfile2 );
 
 # Loop through the stars, making a new catalogue with new stars using
 # a combination of the new ID and the old information.
-  my $corrcat2 = new Astro::Catalog();
+  my $corrcat2 = Astro::Catalog->new();
   @stars = $tempcat->stars;
 
   foreach my $star ( @stars ) {
